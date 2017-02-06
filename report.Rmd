@@ -1,0 +1,73 @@
+---
+title: "Segregation Report"
+author: "Sherry Gao"
+date: "February 1, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is a report describing three metrics for two different measures of segregation as defined by the U.S. Census Bureau that were used to calculate levels of segregation in fourteen cities.  For all equations:
+
+```
+x = minority population of area i (non-whites in this report)
+y = majority population of area i (whites in this report)
+X = total sum of the minority population
+t = total population of area i
+T = total population
+p = ratio of minority population to the total population of area i
+P = ratio of total minority population to total population
+```
+The final results of all equations produced these indexes for each respective city:
+
+```{r, echo=FALSE}
+source("metric_functions.R")
+
+cities <- c("Baltimore", "Charleston", "Chicago", "Columbus", "Dayton", 
+           "Denver", "Kansas City", "Memphis", "Milwaukee", "Oklahoma City", 
+           "Pittsburgh", "St. Louis", "Syracuse", "Wichita")
+
+filenames <- list.files("data/prepped", pattern="*.csv", full.names=TRUE)
+ldf <- lapply(filenames, read.csv)
+dissimilarities <- lapply(ldf, dissimilarity)
+interactions <- lapply(ldf, interaction)
+isolations <- lapply(ldf, isolation)
+df <- data.frame(unlist(dissimilarities), unlist(interactions), unlist(isolations))
+
+rownames(df) <- cities
+colnames(df)[1] <- 'dissimilarity.index'
+colnames(df)[2] <- 'interaction.index'
+colnames(df)[3] <- 'isolation.index'
+
+print(df)
+```
+## Evenness
+
+Evenness measures of segregation compare the spatial distributions of different groups among units in a metropolitan area. The most widely used measure of evenness is the **dissimilarity** index. Dissimilarity measures the percentage of a group’s population that would have to change residence for each neighborhood to have the same percentage of that group as the metropolitan area overall. The index ranges from 0.0 (complete integration) to 1.0 (complete segregation).  The equation for dissimilarity is: $\frac{\Sigma[t|p-P]}{[2TP(1-P)]}$
+
+```{r, echo=FALSE}
+plot(df$dissimilarity.index, xlab='', ylab='Dissimilarity Index')
+axis(1, at=1:14, labels=rownames(df), las=2)
+```
+
+As seen in the graph, Milwaukee is the most segregated city out of the 14 due to its higheset dissimilarity index of 0.619 meaning that roughly 62% of white people would need to move to a different neighborhood to make whites and non-whites evenly distributed across all neighborhoods.  Oklahoma City is the most integrated city where only about 32% of white people would need to move to a different neighborhood to more evenly distribute the neighborhoods.
+
+## Exposure
+
+“Exposure measures the degree of potential contact, or possibility of interaction, between minority and majority group members” (Massey and Denton, p. 287). The two metrics for exposure are **interaction** and **isolation**.  Interaction measures the probability that a minority person shares a unit area with a majority person while isolation measures the probability that a minority person shares a unit area with another minority person.  In this report, since we are only looking at two groups, lower values of interaction and higher values of isolation each indicate higher segregation. The equation for interaction is: $\Sigma[(\frac{x}{X})(\frac{y}{t})]$.  The equation for isolation is $\Sigma[(\frac{x}{X})(\frac{x}{t})]$
+
+```{r, echo=FALSE}
+plot(df$interaction.index, xlab='', ylab='Interaction Index')
+axis(1, at=1:14, labels=rownames(df), las=2)
+
+plot(df$isolation.index, xlab='', ylab='Isolation Index')
+axis(1, at=1:14, labels=rownames(df), las=2)
+```
+
+As seen in the graph, Baltimore has the lowest interaction and highest isolation values, making it the most segregated city by exposure.  The most integrated city by exposure is Denver, which has the highest interaction and lowest isolation value.  This result is different from the measure of Evenness probably due to the fact that Exposure depends on the relative sizes of the two groups while Evenness does not.
+
+## Metric Proposal
+
+A metric that could better evaluate segregation is the rate of populations shifting between neighborhoods, which would be especially more interesting to look at if there was a metric to measure "gentrification" of a neighborhood.  To look at this for a city, we would have to look at census data between two time periods and compare the rates of each neighborhood throughout the city.
